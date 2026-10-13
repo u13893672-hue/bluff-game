@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحدي الأذواق والخدع - لعبة المجموعات التفاعلية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+        }
+        .animate-bounce-slow {
+            animation: bounce 3s infinite;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col min-h-screen p-4 md:p-8">
+
+    <header class="text-center mb-6 relative">
+        <div class="absolute left-4 top-0 hidden md:flex">
+            <button onclick="openShareModal()" class="bg-white/10 hover:bg-white/20 text-amber-300 px-4 py-2 rounded-xl border border-white/20 flex items-center gap-2 text-sm font-bold shadow-lg transition duration-200">
+                <span>📱</span> مشاركة اللعبة (باركود)
+            </button>
+        </div>
+        <div class="inline-flex items-center gap-3 bg-white/10 px-6 py-2 rounded-full border border-white/20 shadow-lg mb-2">
+            <span class="text-3xl">🎭</span>
+            <h1 class="text-2xl md:text-3xl font-black bg-gradient-to-r from-amber-400 via-pink-500 to-purple-400 bg-clip-text text-transparent">تحدي الذكاء والخدع العائلي</h1>
+        </div>
+        <p class="text-gray-300 text-sm md:text-base">اكذب بخداع الفرق الأخرى بالإجابات الوهمية واحصد النقاط!</p>
+        <div class="mt-3 md:hidden flex justify-center">
+            <button onclick="openShareModal()" class="bg-white/10 hover:bg-white/20 text-amber-300 px-4 py-2 rounded-xl border border-white/20 flex items-center gap-2 text-xs font-bold shadow-lg">
+                <span>📱</span> مشاركة اللعبة عبر الباركود
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main id="app" class="flex-grow max-w-4xl mx-auto w-full flex flex-col justify-center items-center">
+        
+        <div id="setup-screen" class="glass-card w-full p-6 md:p-8 rounded-3xl shadow-2xl space-y-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-amber-300 mb-2">إعداد الفرق المشاركة</h2>
+                <p class="text-gray-300 text-sm">أضف الفرق وأعطِ كل فريق اسماً وإيموجي مميزاً (من 2 إلى 6 فرق)</p>
+            </div>
+
+            <div id="teams-inputs-container" class="space-y-4 max-h-60 overflow-y-auto px-2">
+                <!-- Dynamic team inputs will load here -->
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button onclick="addTeamInput()" class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl border border-white/20 transition duration-200">
+                    ➕ إضافة فريق جديد
+                </button>
+                <button onclick="startGame()" class="flex-1 bg-gradient-to-r from-amber-500 to-pink-600 hover:from-amber-600 hover:to-pink-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-200 transform hover:scale-105">
+                    🚀 بدء التحدي!
+                </button>
+            </div>
+        </div>
+
+        <div id="category-screen" class="glass-card w-full p-6 md:p-8 rounded-3xl shadow-2xl hidden space-y-6">
+            <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+                <div>
+                    <span class="text-xs text-gray-400 block">دور اختيار الفئة:</span>
+                    <span id="current-chooser-name" class="text-lg font-bold text-amber-400">الفريق الأول</span>
+                </div>
+                <div class="flex gap-2" id="mini-scoreboard">
+                    <!-- Scores preview -->
+                </div>
+            </div>
+
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-pink-400 mb-1">اختر نوع السؤال لهذا الدور</h2>
+                <p class="text-gray-300 text-sm">اضغط على أحد الأقسام التالية لبدء السؤال</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="categories-grid">
+                <!-- Categories buttons will load here -->
+            </div>
+        </div>
+
+        <div id="input-screen" class="glass-card w-full p-6 md:p-8 rounded-3xl shadow-2xl hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <span id="question-category-badge" class="bg-purple-600/50 px-3 py-1 rounded-full text-xs font-bold text-purple-200 border border-purple-400/30">عامة</span>
+                <span id="input-turn-indicator" class="text-amber-300 font-bold">دور الفريق: ...</span>
+            </div>
+
+            <div class="bg-white/10 p-6 rounded-2xl border border-white/10 text-center space-y-4">
+                <h3 id="question-text" class="text-xl md:text-2xl font-bold text-white leading-relaxed">نص السؤال هنا...</h3>
+                <div id="question-media-container" class="flex justify-center"></div>
+            </div>
+
+            <div class="space-y-3">
+                <label class="block text-sm text-gray-300 font-medium">اكتب إجابتك الوهمية (حاول خداع الفرق الأخرى لتصديقها، وتجنب الإجابة الصحيحة تماماً!):</label>
+                <input type="text" id="fake-answer-input" placeholder="اكتب إجابتك هنا..." class="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400">
+                <p id="error-warning" class="text-red-400 text-xs hidden font-bold">⚠️ هذه هي الإجابة الصحيحة! ممنوع كتابتها، اكتب إجابة وهمية لخداع الآخرين!</p>
+            </div>
+
+            <button onclick="submitFakeAnswer()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-200">
+                إرسال الإجابة الوهمية ✉️
+            </button>
+        </div>
+
+        <div id="voting-screen" class="glass-card w-full p-6 md:p-8 rounded-3xl shadow-2xl hidden space-y-6">
+            <div class="text-center">
+                <span class="bg-pink-600/40 px-3 py-1 rounded-full text-xs font-bold text-pink-200 border border-pink-400/30">مرحلة التصويت والاختيار</span>
+                <h2 class="text-2xl font-bold text-amber-300 mt-2" id="voting-title">اختر الإجابة الصحيحة أو إجابة خدعة الفرق الأخرى!</h2>
+                <p class="text-gray-300 text-sm mt-1">اختر الإجابة الصحيحة لتحصل على (2 نقطة)، أو اختر إجابة فريق آخر لتحصل على نقطة لصاحب الخدعة!</p>
+            </div>
+
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/10 text-center">
+                <h3 id="voting-question-text" class="text-lg font-bold text-white">السؤال هنا</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="choices-container">
+                <!-- Choices rendered here -->
+            </div>
+        </div>
+
+        <div id="results-screen" class="glass-card w-full p-6 md:p-8 rounded-3xl shadow-2xl hidden space-y-6">
+            <div class="text-center">
+                <h2 class="text-3xl font-black text-amber-400 mb-1">نتائج الجولة 🏆</h2>
+                <p class="text-gray-300 text-sm" id="correct-answer-reveal">الإجابة الصحيحة كانت: ...</p>
+            </div>
+
+            <div id="round-scores-breakdown" class="space-y-3 max-h-60 overflow-y-auto">
+                <!-- Breakdown of who scored what -->
+            </div>
+
+            <button onclick="nextRound()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-200">
+                الجولة التالية ➡️
+            </button>
+        </div>
+
+        <div id="gameover-screen" class="glass-card w-full p-6 md:p-8 rounded-3xl shadow-2xl hidden space-y-6 text-center">
+            <div class="text-6xl mb-2">👑</div>
+            <h2 class="text-3xl font-black bg-gradient-to-r from-amber-400 to-pink-500 bg-clip-text text-transparent">انتهت اللعبة بنجاح!</h2>
+            <p class="text-gray-300 text-sm">الفريق الفائز باللقب والجائزة الكبرى:</p>
+
+            <div id="podium-container" class="bg-white/10 p-6 rounded-2xl border border-white/20 space-y-4">
+                <!-- Winner info -->
+            </div>
+
+            <button onclick="resetGame()" class="w-full bg-gradient-to-r from-amber-500 to-pink-600 hover:from-amber-600 hover:to-pink-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-200">
+                لعب مرة أخرى 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Share QR Code Modal -->
+    <div id="share-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center p-4 hidden z-50">
+        <div class="glass-card bg-slate-900 border border-white/20 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="text-lg font-bold text-amber-300">📱 مشاركة اللعبة عبر الباركود</h3>
+                <button onclick="closeShareModal()" class="text-gray-400 hover:text-white font-bold text-xl">✕</button>
+            </div>
+            <p class="text-gray-300 text-xs">امسح الكود بالكاميرا لفتح اللعبة (تأكد أن الرابط منشور على الإنترنت):</p>
+            <div class="bg-white p-4 rounded-2xl inline-block shadow-lg">
+                <img id="qr-code-img" src="" alt="QR Code" class="w-48 h-48 mx-auto object-contain">
+            </div>
+            <div class="space-y-2">
+                <input type="text" id="share-link-input" readonly class="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-xs text-gray-300 text-center select-all">
+                <button onclick="copyGameLink()" class="w-full bg-gradient-to-r from-amber-500 to-pink-600 text-white font-bold py-2.5 rounded-xl text-sm transition duration-200">
+                    📋 نسخ رابط اللعبة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Modal -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center p-4 hidden z-50">
+        <div class="glass-card bg-slate-900 border border-white/20 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div id="modal-icon" class="text-4xl">⚠️</div>
+            <h3 id="modal-title" class="text-xl font-bold text-amber-300">تنبيه</h3>
+            <p id="modal-message" class="text-gray-300 text-sm">رسالة التنبيه هنا</p>
+            <button onclick="closeModal()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl transition duration-200">حسناً</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State Variables
+        let teams = [];
+        let currentChooserIndex = 0;
+        let currentCategory = '';
+        let currentQuestionObj = null;
+        let currentInputTeamIndex = 0;
+        let submittedAnswers = []; // { teamIndex, text, isReal }
+        let currentVoterIndex = 0;
+        let roundResultsLog = [];
+        let currentRound = 1;
+        const maxRounds = 5;
+
+        // Rich Question Database across all requested categories with examples
+        const questionDatabase = {
+            general: [
+                {
+                    q: "ما هو المعدن الوحيد الذي يوجد في الحالة السائلة في درجة حرارة الغرفة؟",
+                    correct: "الزئبق",
+                    hint: "🧪 عنصر كيماوي مشهور يستخدم في الترمومترات"
+                },
+                {
+                    q: "كم عدد عظام جسم الإنسان البالغ تقريبا؟",
+                    correct: "206 عظمة",
+                    hint: "🦴 رقم يتجاوز المئتين بقليل"
+                }
+            ],
+            sports: [
+                {
+                    q: "أي منتخب فاز ببطولة كأس العالم لكرة القدم عام 2022 في قطر؟",
+                    correct: "الأرجنتين",
+                    hint: "🏆 قادهم النجم ليونيل ميسي للفوز باللقب"
+                },
+                {
+                    q: "في أي رياضة يُستخدم مصطلح (الضربة القاضية)؟",
+                    correct: "الملاكمة",
+                    hint: "🥊 حلبة وقفازات وتنافس فردي"
+                }
+            ],
+            islamic: [
+                {
+                    q: "ما هي السورة القرآنية التي تُعرف بـ 'سنام القرآن' وقلب القرآن؟",
+                    correct: "سورة البقرة",
+                    hint: "📖 أطول سور القرآن الكريم"
+                },
+                {
+                    q: "في أي غار اختبأ النبي صلى الله عليه وسلم وأبو بكر الصديق رضي الله عنه أثناء الهجرة؟",
+                    correct: "غار ثور",
+                    hint: "⛰️ يقع جنوب مكة المكرمة وليس حراء"
+                }
+            ],
+            fashion: [
+                {
+                    q: "ما اسم دار العطور الفرنسية الشهيرة التي ابتكرت عطر 'شانيل رقم 5'؟",
+                    correct: "شانيل",
+                    hint: "👜 علامة تجارية عالمية شهيرة"
+                },
+                {
+                    q: "ما اسم القماش المصنوع من الحرير الفاخر والنقوش البارزة الذي اشتهرت به دمشق قديماً؟",
+                    correct: "البروكار",
+                    hint: "🧵 قماش ملكي فاخر جداً"
+                }
+            ],
+            cartoons: [
+                {
+                    q: "ما اسم الكلب الوفي والمرافق الدائم لشخصية (ميكي ماوس) الشهيرة؟",
+                    correct: "بلوتو",
+                    hint: "🐕 كرتون كلاسيكي شهير لديزني"
+                },
+                {
+                    q: "في أنمي المحقق كونان، ما هو اسم الشاب الذكي الذي تقلص ليعيش بشخصية كونان؟",
+                    correct: "سينشي كودو",
+                    hint: "🕵️‍♂️ محقق الثانوية الموهوب"
+                }
+            ],
+            celebrity: [
+                {
+                    q: "من هو المطرب السعودي الراحل الملقب بـ 'صوت الأرض'؟",
+                    correct: "طلال مداح",
+                    hint: "🎵 فنان عملاق وأحد رواد الأغنية الخليجية"
+                },
+                {
+                    q: "من هو الكاتب والروائي العربي الوحيد الذي فاز بجائزة نوبل في الأدب؟",
+                    correct: "نجيب محفوظ",
+                    hint: "📚 أديب المصريين وصاحب ثلاثية القاهرة"
+                }
+            ],
+            movies: [
+                {
+                    q: "ما اسم فيلم الرسوم المتحركة العربي التاريخي الفخم الذي يروي قصة الصحابي بلال بن رباح؟",
+                    correct: "فيلم بلال",
+                    hint: "🎬 فيلم أنيميشن عالمي صدر عام 2015"
+                },
+                {
+                    q: "ما هو اسم الفيلم العالمي الشهير الذي تدور أحداثه حول غرق أضخم سفينة ركاب في التاريخ عام 1912؟",
+                    correct: "تيتانيك",
+                    hint: "🚢 بطولة ليوناردو دي كابريو وكيت وينسلت"
+                }
+            ]
+        };
+
+        const categoryNames = {
+            general: { name: "معلومات عامة", icon: "💡", color: "from-blue-500 to-cyan-600" },
+            sports: { name: "رياضة", icon: "⚽", color: "from-green-500 to-emerald-600" },
+            islamic: { name: "اسلاميات", icon: "🌙", color: "from-amber-500 to-yellow-600" },
+            fashion: { name: "موضة", icon: "✨", color: "from-pink-500 to-rose-600" },
+            cartoons: { name: "رسوم متحركة", icon: "🎨", color: "from-indigo-500 to-purple-600" },
+            celebrity: { name: "مشهور عربي", icon: "⭐", color: "from-orange-500 to-amber-600" },
+            movies: { name: "أفلام", icon: "🍿", color: "from-red-500 to-pink-600" }
+        };
+
+        // Initialize setup inputs on load
+        window.onload = function() {
+            addDefaultTeams();
+        };
+
+        function addDefaultTeams() {
+            const container = document.getElementById('teams-inputs-container');
+            container.innerHTML = '';
+            const defaultTeams = [
+                { name: 'فريق الصقور', emoji: '🦅' },
+                { name: 'فريق النمور', emoji: '🐅' },
+                { name: 'فريق الأساطير', emoji: '⚡' }
+            ];
+            defaultTeams.forEach((t, i) => addTeamInputWithValues(t.name, t.emoji, i));
+        }
+
+        function addTeamInput() {
+            const container = document.getElementById('teams-inputs-container');
+            if (container.children.length >= 6) {
+                showModal("عذراً", "الحد الأقصى هو 6 فرق فقط!", "⚠️");
+                return;
+            }
+            addTeamInputWithValues(`فريق ${container.children.length + 1}`, '🎮', container.children.length);
+        }
+
+        function addTeamInputWithValues(name, emoji, index) {
+            const container = document.getElementById('teams-inputs-container');
+            const div = document.createElement('div');
+            div.className = "flex gap-3 items-center bg-white/5 p-3 rounded-xl border border-white/10";
+            div.innerHTML = `
+                <select class="emoji-select bg-black/40 border border-white/20 rounded-lg p-2 text-xl text-center focus:outline-none">
+                    <option value="🦅" ${emoji==='🦅'?'selected':''}>🦅</option>
+                    <option value="🐅" ${emoji==='🐅'?'selected':''}>🐅</option>
+                    <option value="⚡" ${emoji==='⚡'?'selected':''}>⚡</option>
+                    <option value="🔥" ${emoji==='🔥'?'selected':''}>🔥</option>
+                    <option value="🦁" ${emoji==='🦁'?'selected':''}>🦁</option>
+                    <option value="🚀" ${emoji==='🚀'?'selected':''}>🚀</option>
+                    <option value="💎" ${emoji==='💎'?'selected':''}>💎</option>
+                    <option value="👑" ${emoji==='👑'?'selected':''}>👑</option>
+                </select>
+                <input type="text" value="${name}" class="team-name-input flex-grow bg-black/40 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-amber-400 font-medium" placeholder="اسم الفريق...">
+                ${index > 1 ? `<button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 px-2 font-bold text-lg">✕</button>` : ''}
+            `;
+            container.appendChild(div);
+        }
+
+        function startGame() {
+            const nameInputs = document.querySelectorAll('.team-name-input');
+            const emojiSelects = document.querySelectorAll('.emoji-select');
+            teams = [];
+            for (let i = 0; i < nameInputs.length; i++) {
+                const name = nameInputs[i].value.trim();
+                const emoji = emojiSelects[i].value;
+                if (!name) {
+                    showModal("تنبيه", "يرجى كتابة أسماء لجميع الفرق المشاركة!", "⚠️");
+                    return;
+                }
+                teams.push({ name, emoji, score: 0 });
+            }
+            if (teams.length < 2) {
+                showModal("تنبيه", "يجب أن يكون هناك فريقان على الأقل لبدء اللعبة!", "⚠️");
+                return;
+            }
+
+            currentRound = 1;
+            currentChooserIndex = 0;
+            switchScreen('category-screen');
+            setupCategoryScreen();
+        }
+
+        function switchScreen(screenId) {
+            ['setup-screen', 'category-screen', 'input-screen', 'voting-screen', 'results-screen', 'gameover-screen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function setupCategoryScreen() {
+            document.getElementById('current-chooser-name').innerText = `${teams[currentChooserIndex].emoji} ${teams[currentChooserIndex].name}`;
+            
+            const scoreContainer = document.getElementById('mini-scoreboard');
+            scoreContainer.innerHTML = teams.map(t => `<span class="bg-white/10 px-3 py-1 rounded-lg text-xs font-bold">${t.emoji} ${t.score}</span>`).join('');
+
+            const grid = document.getElementById('categories-grid');
+            grid.innerHTML = '';
+            Object.keys(categoryNames).forEach(catKey => {
+                const cat = categoryNames[catKey];
+                const btn = document.createElement('button');
+                btn.className = `bg-gradient-to-r ${cat.color} hover:opacity-90 p-5 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 transform hover:scale-105 transition duration-200 border border-white/20`;
+                btn.innerHTML = `
+                    <span class="text-4xl">${cat.icon}</span>
+                    <span class="text-lg font-bold text-white">${cat.name}</span>
+                `;
+                btn.onclick = () => selectCategory(catKey);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectCategory(catKey) {
+            currentCategory = catKey;
+            const qList = questionDatabase[catKey];
+            currentQuestionObj = qList[Math.floor(Math.random() * qList.length)];
+            
+            currentInputTeamIndex = 0;
+            submittedAnswers = [];
+            switchScreen('input-screen');
+            prepareInputTurn();
+        }
+
+        function prepareInputTurn() {
+            const team = teams[currentInputTeamIndex];
+            document.getElementById('question-category-badge').innerText = categoryNames[currentCategory].name;
+            document.getElementById('input-turn-indicator').innerText = `دور الفريق: ${team.emoji} ${team.name}`;
+            document.getElementById('question-text').innerText = currentQuestionObj.q;
+            
+            const mediaContainer = document.getElementById('question-media-container');
+            mediaContainer.innerHTML = `<span class="bg-black/30 px-4 py-2 rounded-xl text-amber-300 text-sm border border-white/10">${currentQuestionObj.hint}</span>`;
+
+            document.getElementById('fake-answer-input').value = '';
+            document.getElementById('error-warning').classList.add('hidden');
+        }
+
+        function submitFakeAnswer() {
+            const inputVal = document.getElementById('fake-answer-input').value.trim();
+            const warningEl = document.getElementById('error-warning');
+
+            if (!inputVal) {
+                showModal("تنبيه", "يرجى كتابة إجابة أولاً!", "⚠️");
+                return;
+            }
+
+            if (inputVal.toLowerCase() === currentQuestionObj.correct.toLowerCase()) {
+                warningEl.classList.remove('hidden');
+                return;
+            } else {
+                warningEl.classList.add('hidden');
+            }
+
+            submittedAnswers.push({
+                teamIndex: currentInputTeamIndex,
+                text: inputVal,
+                isReal: false
+            });
+
+            currentInputTeamIndex++;
+            if (currentInputTeamIndex < teams.length) {
+                prepareInputTurn();
+            } else {
+                submittedAnswers.push({
+                    teamIndex: -1,
+                    text: currentQuestionObj.correct,
+                    isReal: true
+                });
+
+                submittedAnswers.sort(() => Math.random() - 0.5);
+
+                currentVoterIndex = 0;
+                setupVotingScreen();
+                switchScreen('voting-screen');
+            }
+        }
+
+        function setupVotingScreen() {
+            const voter = teams[currentVoterIndex];
+            document.getElementById('voting-title').innerText = `دور التصويت: ${voter.emoji} ${voter.name}`;
+            document.getElementById('voting-question-text').innerText = currentQuestionObj.q;
+
+            const container = document.getElementById('choices-container');
+            container.innerHTML = '';
+
+            submittedAnswers.forEach((ans, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "bg-white/10 hover:bg-white/20 border border-white/20 p-5 rounded-2xl text-right transition duration-200 flex justify-between items-center group";
+                btn.innerHTML = `
+                    <span class="text-lg font-bold text-white group-hover:text-amber-300">${String.fromCharCode(65 + idx)}. ${ans.text}</span>
+                    <span class="bg-black/30 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border border-white/10 text-gray-300">${String.fromCharCode(65 + idx)}</span>
+                `;
+                btn.onclick = () => castVote(ans);
+                container.appendChild(btn);
+            });
+        }
+
+        function castVote(chosenAns) {
+            const voter = teams[currentVoterIndex];
+            
+            if (chosenAns.isReal) {
+                voter.score += 2;
+                roundResultsLog.push(`${voter.emoji} ${voter.name} اختار الإجابة الصحيحة وحصل على <span class="text-emerald-400 font-bold">+2 نقطة</span>!`);
+            } else {
+                const authorTeam = teams[chosenAns.teamIndex];
+                if (chosenAns.teamIndex !== currentVoterIndex) {
+                    authorTeam.score += 1;
+                    roundResultsLog.push(`${voter.emoji} ${voter.name} انخدع واختار إجابة ${authorTeam.name}, فحصل ${authorTeam.emoji} ${authorTeam.name} على <span class="text-amber-400 font-bold">+1 نقطة</span>!`);
+                } else {
+                    roundResultsLog.push(`${voter.emoji} ${voter.name} اخترت إجابتك الوهمية الخاصة بك! (لا نقاط)`);
+                }
+            }
+
+            currentVoterIndex++;
+            if (currentVoterIndex < teams.length) {
+                setupVotingScreen();
+            } else {
+                showResultsScreen();
+            }
+        }
+
+        function showResultsScreen() {
+            switchScreen('results-screen');
+            document.getElementById('correct-answer-reveal').innerText = `الإجابة الصحيحة الفائزة كانت: "${currentQuestionObj.correct}"`;
+
+            const breakdownContainer = document.getElementById('round-scores-breakdown');
+            breakdownContainer.innerHTML = roundResultsLog.map(log => `
+                <div class="bg-white/5 p-3 rounded-xl border border-white/10 text-sm text-gray-200 flex items-center gap-2">
+                    <span>📌</span> ${log}
+                </div>
+            `).join('');
+
+            roundResultsLog = [];
+        }
+
+        function nextRound() {
+            currentRound++;
+            if (currentRound > maxRounds) {
+                showGameOver();
+            } else {
+                currentChooserIndex = (currentChooserIndex + 1) % teams.length;
+                switchScreen('category-screen');
+                setupCategoryScreen();
+            }
+        }
+
+        function showGameOver() {
+            switchScreen('gameover-screen');
+            teams.sort((a, b) => b.score - a.score);
+            const winner = teams[0];
+
+            const podium = document.getElementById('podium-container');
+            podium.innerHTML = `
+                <div class="text-5xl animate-bounce-slow mb-2">${winner.emoji}</div>
+                <h3 class="text-2xl font-bold text-amber-300">${winner.name}</h3>
+                <p class="text-xl font-bold text-white mt-1">الرصيد النهائي: <span class="text-pink-400">${winner.score} نقاط</span></p>
+                <div class="mt-4 pt-4 border-t border-white/10 flex justify-center gap-4 text-sm text-gray-300">
+                    ${teams.map((t, idx) => `<div>#${idx+1} ${t.emoji} ${t.name}: ${t.score}</div>`).join('')}
+                </div>
+            `;
+        }
+
+        function resetGame() {
+            currentRound = 1;
+            teams.forEach(t => t.score = 0);
+            switchScreen('setup-screen');
+        }
+
+        function openShareModal() {
+            // استخدام رابط عام صالح أو الرابط الحالي إذا كان متاحاً
+            let currentUrl = window.location.href;
+            if (currentUrl.includes('localhost') || currentUrl.includes('about:blank') || currentUrl.includes('file:///')) {
+                currentUrl = "https://example.com/interactive-bluff-game"; // رابط بديل تجريبي يضمن عمل الباركود دائماً
+            }
+            document.getElementById('share-link-input').value = currentUrl;
+            const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(currentUrl)}`;
+            document.getElementById('qr-code-img').src = qrImg;
+            document.getElementById('share-modal').classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+        }
+
+        function copyGameLink() {
+            const linkInput = document.getElementById('share-link-input');
+            linkInput.select();
+            try {
+                document.execCommand('copy');
+                showModal("تم النسخ", "تم نسخ رابط اللعبة بنجاح! يمكنك مشاركته مع أصدقائك.", "📋");
+            } catch (err) {
+                showModal("تنبيه", "تعذر النسخ التلقائي، يرجى نسخ الرابط يدويّاً.", "⚠️");
+            }
+        }
+
+        function showModal(title, message, icon = "⚠️") {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal-icon').innerText = icon;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
